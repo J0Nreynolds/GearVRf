@@ -20,6 +20,7 @@
 #ifndef POST_EFFECT_SHADER_MANAGER_H_
 #define POST_EFFECT_SHADER_MANAGER_H_
 
+#include <shaders/posteffect/fog_post_effect_shader.h>
 #include "objects/hybrid_object.h"
 #include "shaders/posteffect/color_blend_post_effect_shader.h"
 #include "shaders/posteffect/horizontal_flip_post_effect_shader.h"
@@ -30,7 +31,7 @@ namespace gvr {
 class PostEffectShaderManager: public HybridObject {
 public:
     PostEffectShaderManager() :
-            HybridObject(), color_blend_post_effect_shader_(), horizontal_flip_post_effect_shader_(), latest_custom_shader_id_(
+            HybridObject(), color_blend_post_effect_shader_(), horizontal_flip_post_effect_shader_(), fog_post_effect_shader_(), latest_custom_shader_id_(
                     INITIAL_CUSTOM_SHADER_INDEX), custom_post_effect_shaders_(), quad_vertices_(), quad_uvs_(), quad_triangles_() {
         quad_vertices_.push_back(glm::vec3(-1.0f, -1.0f, 0.0f));
         quad_vertices_.push_back(glm::vec3(-1.0f, 1.0f, 0.0f));
@@ -54,6 +55,7 @@ public:
     ~PostEffectShaderManager() {
         delete color_blend_post_effect_shader_;
         delete horizontal_flip_post_effect_shader_;
+        delete fog_post_effect_shader_;
         // We don't delete the custom shaders, as their Java owner-objects will do that for us.
     }
 
@@ -70,6 +72,14 @@ public:
                     new HorizontalFlipPostEffectShader();
         }
         return horizontal_flip_post_effect_shader_;
+    }
+
+    FogPostEffectShader* getFogPostEffectShader() {
+        if (!fog_post_effect_shader_) {
+            fog_post_effect_shader_ =
+                    new FogPostEffectShader();
+        }
+        return fog_post_effect_shader_;
     }
 
     int addCustomPostEffectShader(const char* vertex_shader, const char* fragment_shader) {
@@ -115,6 +125,7 @@ private:
     static const int INITIAL_CUSTOM_SHADER_INDEX = 1000;
     ColorBlendPostEffectShader* color_blend_post_effect_shader_;
     HorizontalFlipPostEffectShader* horizontal_flip_post_effect_shader_;
+    FogPostEffectShader* fog_post_effect_shader_;
     int latest_custom_shader_id_;
     std::map<int, CustomPostEffectShader*> custom_post_effect_shaders_;
     std::vector<glm::vec3> quad_vertices_;

@@ -437,6 +437,13 @@ void Renderer::renderPostEffectData(Camera* camera,
                     post_effect_shader_manager->quad_uvs(),
                     post_effect_shader_manager->quad_triangles());
             break;
+        case PostEffectData::ShaderType::FOG_SHADER:
+            post_effect_shader_manager->getFogPostEffectShader()->render(
+                    render_texture, post_effect_data,
+                    post_effect_shader_manager->quad_vertices(),
+                    post_effect_shader_manager->quad_uvs(),
+                    post_effect_shader_manager->quad_triangles());
+            break;
         default:
             post_effect_shader_manager->getCustomPostEffectShader(
                     post_effect_data->shader_type())->render(camera,

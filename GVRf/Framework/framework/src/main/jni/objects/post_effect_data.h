@@ -36,7 +36,7 @@ class Texture;
 class PostEffectData: public HybridObject {
 public:
     enum ShaderType {
-        COLOR_BLEND_SHADER = 0, HORIZONTAL_FLIP_SHADER = 1,
+        COLOR_BLEND_SHADER = 0, HORIZONTAL_FLIP_SHADER = 1, FOG_SHADER = 2,
     };
 
     PostEffectData(ShaderType shader_type) :

@@ -56,6 +56,12 @@ public class GVRPostEffect extends GVRHybridObject implements
             public static final GVRPostEffectShaderId ID = new GVRStockPostEffectShaderId(
                     1);
         }
+
+        /** Selects a post-effect shader that flips the scene horizontally. */
+        public abstract static class Fog {
+            public static final GVRPostEffectShaderId ID = new GVRStockPostEffectShaderId(
+                    2);
+        }
     };
 
     /**
