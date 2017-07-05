@@ -21,6 +21,7 @@
 #ifndef TRANSFORM_H_
 #define TRANSFORM_H_
 
+#include <mutex>
 #include <memory>
 
 #include "glm/glm.hpp"
@@ -40,144 +41,6 @@ public:
         return COMPONENT_TYPE_TRANSFORM;
     }
 
-    const glm::vec3& position() const {
-        return position_;
-    }
-
-    float position_x() const {
-        return position_.x;
-    }
-
-    float position_y() const {
-        return position_.y;
-    }
-
-    float position_z() const {
-        return position_.z;
-    }
-
-    void set_position(const glm::vec3& position) {
-        position_ = position;
-        invalidate(false);
-    }
-
-    void set_position(float x, float y, float z) {
-        position_.x = x;
-        position_.y = y;
-        position_.z = z;
-        invalidate(false);
-    }
-
-    void set_position_x(float x) {
-        position_.x = x;
-        invalidate(false);
-    }
-
-    void set_position_y(float y) {
-        position_.y = y;
-        invalidate(false);
-    }
-
-    void set_position_z(float z) {
-        position_.z = z;
-        invalidate(false);
-    }
-
-    const glm::quat& rotation() const {
-        return rotation_;
-    }
-
-    float rotation_w() const {
-        return rotation_.w;
-    }
-
-    float rotation_x() const {
-        return rotation_.x;
-    }
-
-    float rotation_y() const {
-        return rotation_.y;
-    }
-
-    float rotation_z() const {
-        return rotation_.z;
-    }
-
-    // in radians
-    float rotation_yaw() const {
-        return glm::yaw(rotation_);
-    }
-
-    // in radians
-    float rotation_pitch() const {
-        return glm::pitch(rotation_);
-    }
-
-    // in radians
-    float rotation_roll() const {
-        return glm::roll(rotation_);
-    }
-
-    void set_rotation(float w, float x, float y, float z) {
-        rotation_.w = w;
-        rotation_.x = x;
-        rotation_.y = y;
-        rotation_.z = z;
-        invalidate(true);
-    }
-
-    void set_rotation(const glm::quat& roation) {
-        rotation_ = roation;
-        invalidate(true);
-    }
-
-    const glm::vec3& scale() const {
-        return scale_;
-    }
-
-    float scale_x() const {
-        return scale_.x;
-    }
-
-    float scale_y() const {
-        return scale_.y;
-    }
-
-    float scale_z() const {
-        return scale_.z;
-    }
-
-    void set_scale(const glm::vec3& scale) {
-        scale_ = scale;
-        invalidate(false);
-    }
-
-    void set_scale(float x, float y, float z) {
-        scale_.x = x;
-        scale_.y = y;
-        scale_.z = z;
-        invalidate(false);
-    }
-
-    void set_scale_x(float x) {
-        scale_.x = x;
-        invalidate(false);
-    }
-
-    void set_scale_y(float y) {
-        scale_.y = y;
-        invalidate(false);
-    }
-
-    void set_scale_z(float z) {
-        scale_.z = z;
-        invalidate(false);
-    }
-
-    bool isModelMatrixValid() {
-        return model_matrix_.isValid();
-    }
-
     void invalidate(bool rotationUpdated);
     glm::mat4 getModelMatrix(bool forceRecalculate = false);
     glm::mat4 getLocalModelMatrix();
@@ -191,6 +54,42 @@ public:
             float pivot_y, float pivot_z);
     void setModelMatrix(glm::mat4 mat);
 
+    const glm::vec3 &position() const;
+    float position_x() const;
+    float position_y() const;
+    float position_z() const;
+
+    void set_position(const glm::vec3 &position);
+    void set_position(float x, float y, float z);
+    void set_position_x(float x);
+    void set_position_y(float y);
+    void set_position_z(float z);
+
+    const glm::quat &rotation() const;
+    float rotation_w() const;
+    float rotation_x() const;
+    float rotation_y() const;
+    float rotation_z() const;
+    float rotation_yaw() const;
+    float rotation_pitch() const;
+    float rotation_roll() const;
+
+    void set_rotation(float w, float x, float y, float z);
+    void set_rotation(const glm::quat &rotation);
+
+    const glm::vec3 &scale() const;
+    float scale_x() const;
+    float scale_y() const;
+    float scale_z() const;
+
+    void set_scale(const glm::vec3 &scale);
+    void set_scale(float x, float y, float z);
+    void set_scale_x(float x);
+    void set_scale_y(float y);
+    void set_scale_z(float z);
+
+    bool isModelMatrixValid();
+
 private:
     Transform(const Transform& transform);
     Transform(Transform&& transform);
@@ -203,6 +102,11 @@ private:
     glm::vec3 scale_;
 
     Lazy<glm::mat4> model_matrix_;
+
+    std::mutex mutex_;
+    mutable std::mutex position_mutex_;
+    mutable std::mutex rotation_mutex_;
+    mutable std::mutex scale_mutex_;
 };
 
 }
