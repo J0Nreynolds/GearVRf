@@ -87,7 +87,6 @@ ColliderData MeshCollider::isHit(const glm::vec3& rayStart, const glm::vec3& ray
         RenderData* rd = owner->render_data();
         model_matrix = owner->transform()->getModelMatrix();
         glm::mat4 model_inverse = glm::affineInverse(model_matrix);
-
         transformRay(model_inverse, O, D);
         if ((mesh == NULL) && (rd != NULL))
         {
@@ -152,7 +151,8 @@ static void calcBarycentric(const glm::vec3 &p, const glm::vec3 &a, const glm::v
 /**
  * Sets the Barycentric coordinates corresponding to the HitPoint on the mesh
  * @param mesh          the Mesh of the object that was collided with
- * @param colliderData  the ColliderData holding the HitPoint which will also store the Barycentric coordinates
+ * @param colliderData  the ColliderData holding the HitPoint which will also store the Barycentric
+ * coordinates
  */
 static void populateBarycentricCoords(const Mesh& mesh, ColliderData& colliderData) {
     const std::vector<glm::vec3> &vertices = mesh.vertices();
@@ -165,11 +165,12 @@ static void populateBarycentricCoords(const Mesh& mesh, ColliderData& colliderDa
 }
 
 /**
- * Sets the Barycentric and UV coordinates corresponding to the HitPoint on the mesh
+ * Sets the Barycentric coordinates, UV coordinates, and normal corresponding to the HitPoint on the
+ * mesh
  * @param mesh          the Mesh of the object that was collided with
  * @param colliderData  the ColliderData holding the HitPoint which will also store the UV coordinates
  */
-static void populateTexCoords(const Mesh& mesh, ColliderData& colliderData) {
+static void populateSurfaceCoords(const Mesh &mesh, ColliderData &colliderData) {
     populateBarycentricCoords(mesh, colliderData);
     try{
         const std::vector<glm::vec2> &texCoords = mesh.getVec2Vector("a_texcoord"); //may not exist
@@ -177,9 +178,16 @@ static void populateTexCoords(const Mesh& mesh, ColliderData& colliderData) {
         glm::vec2 u2(texCoords[mesh.triangles()[colliderData.FaceIndex * 3 + 1]]);
         glm::vec2 u3(texCoords[mesh.triangles()[colliderData.FaceIndex * 3 + 2]]);
 
+        glm::vec3 n1(mesh.normals()[mesh.triangles()[colliderData.FaceIndex * 3]]);
+        glm::vec3 n2(mesh.normals()[mesh.triangles()[colliderData.FaceIndex * 3 + 1]]);
+        glm::vec3 n3(mesh.normals()[mesh.triangles()[colliderData.FaceIndex * 3 + 2]]);
+
         colliderData.TextureCoordinates =   u1 * colliderData.BarycentricCoordinates.x
                                             + u2 * colliderData.BarycentricCoordinates.y
                                             + u3 * colliderData.BarycentricCoordinates.z;
+        colliderData.NormalCoordinates =    n1 * colliderData.BarycentricCoordinates.x
+                                            + n2 * colliderData.BarycentricCoordinates.y
+                                            + n3 * colliderData.BarycentricCoordinates.z;
     }
     catch (const std::string& warning){
         LOGW("%s", warning.c_str());
@@ -220,7 +228,7 @@ ColliderData MeshCollider::isHit(const Mesh& mesh, const glm::vec3& rayStart, co
             }
         }
         if(pickCoordinates){
-            populateTexCoords(mesh, data);
+            populateSurfaceCoords(mesh, data);
         }
 
     }
