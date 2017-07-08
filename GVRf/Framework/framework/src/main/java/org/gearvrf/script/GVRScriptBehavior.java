@@ -206,7 +206,7 @@ public class GVRScriptBehavior extends GVRBehavior implements IPickEvents, ISens
         invokeFunction("onStep", noargs);
     }
 
-    public void onEnter(GVRSceneObject sceneObj, GVRPicker.GVRPickedObject hit)
+    public void onEnter(GVRPicker picker, GVRSceneObject sceneObj, GVRPicker.GVRPickedObject hit)
     {
          if ((sceneObj == getOwnerObject()) && !invokeFunction("onPickEnter", new Object[] { sceneObj, hit }))
          {
@@ -218,7 +218,7 @@ public class GVRScriptBehavior extends GVRBehavior implements IPickEvents, ISens
          }
     }
 
-    public void onExit(GVRSceneObject sceneObj)
+    public void onExit(GVRPicker picker, GVRSceneObject sceneObj)
     {
         if ((sceneObj == getOwnerObject()) && !invokeFunction("onPickExit", new Object[] { sceneObj }))
         {
@@ -259,7 +259,7 @@ public class GVRScriptBehavior extends GVRBehavior implements IPickEvents, ISens
         invokeFunction("onSensorEvent", new Object[] { event });
     }
 
-    public void onInside(GVRSceneObject sceneObj, GVRPicker.GVRPickedObject hit) { }
+    public void onInside(GVRPicker picker, GVRSceneObject sceneObj, GVRPicker.GVRPickedObject hit) { }
 
     protected void attachScript(GVRSceneObject owner)
     {
