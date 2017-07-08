@@ -107,7 +107,7 @@ public class GVRPicker extends GVRBehavior {
     {
         super(owner.getGVRContext());
         mScene = scene;
-        setPickRay(0, 0, 0, 0, 0, 1);
+        setPickRay(0f, 0f, 0f, 0f, 0f, -1f);
         owner.attachComponent(this);
     }
 
@@ -236,6 +236,7 @@ public class GVRPicker extends GVRBehavior {
                 if (!hasCollider(picked, collider))
                 {
                     getGVRContext().getEventManager().sendEvent(mScene, IPickEvents.class, "onExit", collider.getOwnerObject());
+                    getGVRContext().getEventManager().sendEvent(collider.getOwnerObject(), IPickEvents.class, "onExit", collider.getOwnerObject());
                     selectionChanged = true;
                 }
             }
@@ -260,11 +261,14 @@ public class GVRPicker extends GVRBehavior {
             if (!hasCollider(mPicked, collider))
             {
                 getGVRContext().getEventManager().sendEvent(mScene, IPickEvents.class, "onEnter", collider.getOwnerObject(), collision);
+                getGVRContext().getEventManager().sendEvent(collider.getOwnerObject(), IPickEvents.class, "onEnter", collider.getOwnerObject(), collision);
+
                 selectionChanged = true;
             }
             else
             {
                 getGVRContext().getEventManager().sendEvent(mScene, IPickEvents.class, "onInside", collider.getOwnerObject(), collision);
+                getGVRContext().getEventManager().sendEvent(collider.getOwnerObject(), IPickEvents.class, "onInside", collider.getOwnerObject(), collision);
             }
         }
         if (selectionChanged)
@@ -610,6 +614,7 @@ public class GVRPicker extends GVRBehavior {
         try {
             long nativeTrans = (trans != null) ? trans.getNative() : 0L;
             final GVRPickedObject[] result = NativePicker.pickObjects(scene.getNative(), nativeTrans, ox, oy, oz, dx, dy, dz);
+            android.util.Log.d(TAG, "pickObjects: " + result.length);
             return result;
         } finally {
             sFindObjectsLock.unlock();
@@ -831,6 +836,12 @@ public class GVRPicker extends GVRBehavior {
 
         /** The v coordinate of the texture hit location */
         public float getTextureV(){ return textureCoords[1]; }
+
+        @Override
+        public String toString(){
+            return "{HitObject: " + this.getHitObject() + ", HitCollider: " + this.getHitCollider() + ", HitPoint: " + this.getHitLocation() + ", HitDistance: "
+                    + this.getHitDistance() + ", TextureCoords: " + this.getTextureCoords() + ", Barycentric Coords: " + this.getBarycentricCoords() +" }";
+        }
     }
 
     static final ReentrantLock sFindObjectsLock = new ReentrantLock();
