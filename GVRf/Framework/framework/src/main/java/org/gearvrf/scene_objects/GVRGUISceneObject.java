@@ -162,23 +162,25 @@ public class GVRGUISceneObject extends GVRViewSceneObject {
          */
         for(int i = 0; i <= subdivisions; i++){
             double angle = Math.toRadians(-90+startDegree + DEGREES_PER_SUBDIVISION*i);
-            float x = (float) (radius * Math.cos(angle));
-            float z = (float) ((radius * Math.sin(angle)) + radius);
+            double cos = Math.cos(angle);
+            double sin = Math.sin(angle);
+            float x = (float) (radius * cos);
+            float z = (float) ((radius * sin) + radius);
             vertices[6*i] = x;
             vertices[6*i + 1] = yTop;
             vertices[6*i + 2] = z;
-            normals[6*i] = -x;
+            normals[6*i] = (float)-cos;
             normals[6*i + 1] = 0.0f;
-            normals[6*i + 2] = -z;
+            normals[6*i + 2] = (float)-sin;
             texCoords[4*i] = (float)i/subdivisions;
             texCoords[4*i + 1] = 0.0f;
 
             vertices[6*i + 3] = x;
             vertices[6*i + 4] = yBottom;
             vertices[6*i + 5] = z;
-            normals[6*i + 3] = -x;
+            normals[6*i + 3] = (float)-cos;
             normals[6*i + 4] = 0.0f;
-            normals[6*i + 5] = -z;
+            normals[6*i + 5] = (float)-sin;
             texCoords[4*i + 2] = (float)i/subdivisions;
             texCoords[4*i + 3] = 1.0f;
         }
