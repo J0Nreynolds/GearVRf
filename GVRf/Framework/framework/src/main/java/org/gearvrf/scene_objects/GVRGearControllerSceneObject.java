@@ -33,7 +33,6 @@ public class GVRGearControllerSceneObject extends GVRSceneObject {
     private float cursorDepth = 1.0f;
     private GVRSceneObject cursor = null;
     private GVRSceneObject controller = null;
-    private GVRBillboard mBillboard = null;
     private PickListener pickListener = new PickListener();
 
 
@@ -59,8 +58,6 @@ public class GVRGearControllerSceneObject extends GVRSceneObject {
         cursor.getRenderData().getTransform().setPosition(0, 0, -cursorDepth);
         cursor.getRenderData().setDepthTest(false);
         cursor.getRenderData().setRenderingOrder(100000);
-        mBillboard = new GVRBillboard(context);
-        cursor.attachComponent(mBillboard);
         addChildObject(cursor);
     }
 
@@ -107,19 +104,38 @@ public class GVRGearControllerSceneObject extends GVRSceneObject {
 
         @Override
         public void onEnter(GVRSceneObject sceneObj, GVRPicker.GVRPickedObject collision) {
-            mBillboard.setEnable(false);
-            cursor.getTransform().setPosition(0, 0, -collision.getHitDistance());
+            removeChildObject(cursor);
+            sceneObj.addChildObject(cursor);
         }
 
         @Override
         public void onExit(GVRSceneObject sceneObj){
+            sceneObj.removeChildObject(cursor);
+            cursor.getTransform().reset();
             cursor.getTransform().setPosition(0, 0, -cursorDepth);
-            mBillboard.setEnable(true);
+            addChildObject(cursor);
         }
 
         @Override
         public void onInside(GVRSceneObject sceneObj, GVRPicker.GVRPickedObject collision){
-            cursor.getTransform().setPosition(0, 0, -collision.getHitDistance());
+            Vector3f lookat = new Vector3f(0, 0, 0);
+            Vector3f up = new Vector3f(0, 1, 0);
+            Vector3f Xaxis = new Vector3f(0, 0, 0);
+            Vector3f Yaxis = new Vector3f(0, 0, 0);
+
+            lookat.set(collision.getNormalX(), collision.getNormalY(), collision.getNormalZ());
+            lookat = lookat.normalize();
+
+            up.cross(lookat.x, lookat.y, lookat.z, Xaxis);
+            Xaxis = Xaxis.normalize();
+
+            lookat.cross(Xaxis.x, Xaxis.y, Xaxis.z, Yaxis);
+            Yaxis = Yaxis.normalize();
+
+            cursor.getTransform().setModelMatrix(new float[]{Xaxis.x, Xaxis.y, Xaxis.z, 0.0f,
+                    Yaxis.x, Yaxis.y, Yaxis.z, 0.0f,
+                    lookat.x, lookat.y, lookat.z, 0.0f,
+                    collision.getHitX(), + collision.getHitY(), collision.getHitZ(), 1.0f});
         }
     };
 
