@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.gearvrf.GVRCursorController.ActiveState;
+import org.gearvrf.io.GVRControllerType;
 import org.joml.Vector3f;
 
 /**
@@ -113,13 +114,14 @@ class SensorManager {
          */
         Vector3f ray = controller.getRay();
         Vector3f origin = controller.getOrigin();
+        if(controller.getControllerType() == GVRControllerType.CONTROLLER)
         if (!object.intersectsBoundingVolume(origin.x, origin.y, origin.z, ray.x, ray.y, ray.z)) {
             return;
         }
 
         // Well at least we are not comparing against all scene objects.
         if (objectSensor != null && objectSensor.isEnabled() && object.isEnabled()
-                & object.hasMesh()) {
+                && object.hasMesh()) {
             GVRPicker.GVRPickedObject pickedObject;
             if(object.getCollider() != null)
                 pickedObject = GVRPicker.pickSceneObject(object, origin.x, origin.y, origin.z, ray.x, ray.y, ray.z);

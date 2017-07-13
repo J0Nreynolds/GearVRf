@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -91,11 +92,11 @@ public class GVRBaseSensor {
 
     void addPickedObject(GVRCursorController controller, GVRPicker.GVRPickedObject pickedObject) {
         ControllerData data = getControllerData(controller);
-        Set<GVRPicker.GVRPickedObject> prevHits = data.getPrevHits();
+        Map<GVRSceneObject, GVRPicker.GVRPickedObject> prevHits = data.getPrevHits();
         List<SensorEvent> newHits = data.getNewHits();
 
-        if (prevHits.contains(pickedObject)) {
-            prevHits.remove(pickedObject);
+        if (prevHits.containsKey(pickedObject.hitObject)) {
+            prevHits.remove(pickedObject.hitObject);
         }
 
         SensorEvent event = SensorEvent.obtain();
@@ -108,12 +109,12 @@ public class GVRBaseSensor {
         final List<SensorEvent> events = new ArrayList<SensorEvent>();
 
         ControllerData data = getControllerData(controller);
-        Set<GVRPicker.GVRPickedObject> prevHits = data.getPrevHits();
+        Map<GVRSceneObject, GVRPicker.GVRPickedObject> prevHits = data.getPrevHits();
         List<SensorEvent> newHits = data.getNewHits();
 
         // process the previous hit objects to set isOver to false.
         if (prevHits.isEmpty() == false) {
-            for (GVRPicker.GVRPickedObject object : prevHits) {
+            for (GVRPicker.GVRPickedObject object : prevHits.values()) {
                 SensorEvent event = SensorEvent.obtain();
                 event.setActive(data.getActive());
                 event.setCursorController(controller);
@@ -128,10 +129,11 @@ public class GVRBaseSensor {
 
         if (newHits.isEmpty() == false) {
             for (SensorEvent event : newHits) {
+                GVRPicker.GVRPickedObject pickedObject = event.getPickedObject();
                 event.setActive(data.getActive());
                 event.setCursorController(controller);
                 events.add(event);
-                prevHits.add(event.getPickedObject());
+                prevHits.put(pickedObject.hitObject, pickedObject);
             }
             newHits.clear();
         }
@@ -239,12 +241,12 @@ public class GVRBaseSensor {
      * {@link GVRCursorController} on a given {@link GVRBaseSensor}.
      */
     private static class ControllerData {
-        private Set<GVRPicker.GVRPickedObject> prevHits;
+        private Map<GVRSceneObject, GVRPicker.GVRPickedObject> prevHits;
         private List<SensorEvent> newHits;
         private boolean active;
 
         public ControllerData() {
-            prevHits = new HashSet<GVRPicker.GVRPickedObject>();
+            prevHits = new HashMap<GVRSceneObject, GVRPicker.GVRPickedObject>();
             newHits = new ArrayList<SensorEvent>();
         }
 
@@ -252,7 +254,7 @@ public class GVRBaseSensor {
             this.active = active;
         }
 
-        public Set<GVRPicker.GVRPickedObject> getPrevHits() {
+        public Map<GVRSceneObject, GVRPicker.GVRPickedObject> getPrevHits() {
             return prevHits;
         }
 
