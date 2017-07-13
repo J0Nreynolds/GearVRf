@@ -555,8 +555,8 @@ public class GVRPicker extends GVRBehavior {
             return null;
         }
         return new GVRPicker.GVRPickedObject(collider, new float[] { hitx, hity, hitz }, distance, faceIndex,
-                new float[] {barycentricx, barycentricy, barycentricz},
-                new float[]{ texu, texv }, new float[]{normalx, normaly, normalz});
+                new float[] {barycentricx, barycentricy, barycentricz}, new float[]{ texu, texv },
+                new float[]{normalx, normaly, normalz});
     }
 
     /**
