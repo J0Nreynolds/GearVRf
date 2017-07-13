@@ -1,32 +1,21 @@
 package org.gearvrf.scene_objects;
 
-import android.os.Message;
-import android.util.Log;
-import android.view.InputDevice;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
-
 import org.gearvrf.GVRAndroidResource;
-import org.gearvrf.GVRBillboard;
+import org.gearvrf.GVRBaseSensor;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVRCursorController;
 import org.gearvrf.GVRMaterial;
-import org.gearvrf.GVRMesh;
 import org.gearvrf.GVRPhongShader;
 import org.gearvrf.GVRPicker;
 import org.gearvrf.GVRSceneObject;
 import org.gearvrf.GVRTexture;
-import org.gearvrf.IPickEvents;
 import org.gearvrf.ISensorEvents;
 import org.gearvrf.R;
 import org.gearvrf.SensorEvent;
+import org.gearvrf.io.GVRControllerType;
+
 import org.joml.Vector3f;
-
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.Future;
-
-import static android.util.Config.LOGD;
 
 /**
  * Created by j.reynolds on 6/30/2017.
@@ -34,12 +23,14 @@ import static android.util.Config.LOGD;
 
 public class GVRGearControllerSceneObject extends GVRSceneObject {
     private final String TAG = GVRGearControllerSceneObject.class.getSimpleName();
-    private float cursorDepth = 1.0f;
+    private float rayDepth = 1.0f;
+    private boolean projectToSurface = false;
+    private GVRBaseSensor disabledSensor;
     private GVRSceneObject cursor = null;
     private GVRSceneObject controller = null;
     private GVRSceneObject ray = null;
-    private GVRPicker picker = null;
-    private PickListener pickListener = new PickListener();
+    private GVRCursorController gearCursorController = null;
+    private SensorListener sensorListener = new SensorListener();
 
 
     /**
@@ -48,10 +39,13 @@ public class GVRGearControllerSceneObject extends GVRSceneObject {
      * This constructor creates a {@link GVRSceneObject} resembling a
      * physical Gear VR Controller and assigns it as a child to this object
      *
-     * @param gvrContext    current {@link GVRContext}
+     * @param gvrContext current {@link GVRContext}
      */
     public GVRGearControllerSceneObject(GVRContext gvrContext){
         super(gvrContext);
+        disabledSensor = new GVRBaseSensor(getGVRContext());
+        disabledSensor.disable();
+
         controller = new GVRSceneObject(gvrContext, gvrContext.getAssetLoader().loadMesh(new GVRAndroidResource(gvrContext, R.raw.gear_vr_controller)));
         GVRTexture tex = (gvrContext.getAssetLoader().loadTexture(new GVRAndroidResource(gvrContext, R.drawable.gear_vr_controller_color_1024)));
         GVRMaterial mat = new GVRMaterial(gvrContext);
@@ -61,7 +55,8 @@ public class GVRGearControllerSceneObject extends GVRSceneObject {
         controller.getRenderData().getTransform().rotateByAxis(270f, 1, 0, 0);
         controller.getRenderData().getTransform().rotateByAxis(180f, 0, 1,0);
         addChildObject(controller);
-        ray = new GVRLineSceneObject(gvrContext, cursorDepth);
+
+        ray = new GVRLineSceneObject(gvrContext, rayDepth);
         ray.getRenderData().setShaderTemplate(GVRPhongShader.class);
         GVRMaterial rayMaterial = new GVRMaterial(gvrContext);
         rayMaterial.setDiffuseColor(0.5f,0.5f,0.5f,1);
@@ -71,125 +66,231 @@ public class GVRGearControllerSceneObject extends GVRSceneObject {
         addChildObject(ray);
     }
 
+    /**
+     * Sets a {@link GVRSceneObject} as the cursor to be displayed at
+     * the end of the ray of the GearController.
+     *
+     * @param obj the scene object to represent the cursor
+     */
     public void setCursor(GVRSceneObject obj){
         cursor = obj;
-        cursor.getTransform().setPosition(0, 0, -cursorDepth);
-        cursor.getRenderData().setDepthTest(false);
-        cursor.getRenderData().setRenderingOrder(100000);
+        cursor.getTransform().setPosition(0, 0, -rayDepth);
+        cursor.setSensor(disabledSensor); //necessary for projection
         addChildObject(cursor);
     }
 
-    public void removeCursor(){
-        removeChildObject(cursor);
-        cursor = null;
+    /**
+     * Returns the {@link GVRSceneObject} set to represent the cursor
+     * @return the cursor object
+     */
+    public GVRSceneObject getCursor(){
+        return cursor;
     }
 
+    /**
+     * Removes the {@link GVRSceneObject} set to represent the cursor
+     * if one has been set.
+     */
+    public void removeCursor(){
+        if(cursor != null) {
+            removeChildObject(cursor);
+            cursor = null;
+        }
+    }
+
+    /**
+     * Returns the {@link GVRSceneObject} that represents a ray emanating from
+     * the controller
+     *
+     * @return  the ray {@link GVRSceneObject}
+     */
     public GVRSceneObject getRay(){
         return ray;
     }
 
+    /**
+     * Enables the ray {@link GVRSceneObject}, making it visible if it wasn't
+     * before.
+     */
     public void enableRay(){
         ray.setEnable(true);
     }
 
+
+    /**
+     * Disables the ray {@link GVRSceneObject}, making it invisible if it wasn't
+     * before.
+     */
     public void disableRay(){
         ray.setEnable(false);
     }
 
-    public void setCursorDepth(float depth){
-        this.cursorDepth = Math.abs(depth);
-        ray.getTransform().setScaleZ(cursorDepth);
+    /**
+     * Sets the ray depth, which determines how far the ray extends as well as
+     * where the cursor is placed relative to the controller {@link GVRSceneObject}
+     *
+     * @param depth distance the ray should extend
+     */
+    public void setRayDepth(float depth){
+        rayDepth = Math.abs(depth);
+        ray.getTransform().setScaleZ(rayDepth);
         if(cursor != null)
-            cursor.getTransform().setPosition(0, 0, -cursorDepth);
+            cursor.getTransform().setPosition(0, 0, -rayDepth);
     }
 
-    public float getCursorDepth(){
-        return this.cursorDepth;
+    /**
+     * Returns the current ray depth.
+     *
+     * @return the ray depth
+     */
+    public float getRayDepth(){
+        return this.rayDepth;
     }
 
-
+    /**
+     * Sets a {@link GVRSceneObject} to represent the Gear VR Controller in
+     * a scene.
+     *
+     * @param obj the {@link GVRSceneObject} that will represent the controller
+     */
     public void setControllerObject(GVRSceneObject obj){
         removeChildObject(controller);
         controller = obj;
         addChildObject(controller);
     }
 
+    /**
+     * Returns the current {@link GVRSceneObject} representing the Gear VR controller.
+     * @return the controller {@link GVRSceneObject}
+     */
     public GVRSceneObject getControllerObject(){
         return controller;
     }
 
-    public GVRPicker attachPicker(){
-        picker = new GVRPicker(this, getGVRContext().getMainScene());
-        return picker;
-    }
-
-    public void addProjectiveObject(GVRSceneObject obj) {
-        if(picker != null)
-            obj.getEventReceiver().addListener(pickListener);
-    }
-
-    public void removeProjectiveObject(GVRSceneObject obj){
-        if(picker != null)
-            obj.getEventReceiver().removeListener(pickListener);
-    }
-
-    private class PickListener implements IPickEvents {
-
-        private final float[] nullCoords = {-1f, -1f, -1f};
-
-        @Override
-        public void onPick(GVRPicker picker){}
-
-        @Override
-        public void onNoPick(GVRPicker picker){}
-
-        @Override
-        public void onEnter(GVRPicker gvrPicker, GVRSceneObject sceneObj, GVRPicker.GVRPickedObject collision) {
-            if(gvrPicker != picker) return;
-            if(cursor != null && !Arrays.equals(collision.getBarycentricCoords(), nullCoords)) {
-                    removeChildObject(cursor);
-                    sceneObj.addChildObject(cursor);
-            }
-            onInside(gvrPicker, sceneObj, collision);
+    /**
+     * Sets the {@link GVRCursorController} that controls this object. The cursor controller
+     * should have a type of {@link org.gearvrf.io.GVRControllerType#CONTROLLER}.
+     *
+     * Note that a CursorController must be set in order to receive a non-null
+     * {@link ISensorEvents} from {@link this#getProjectionListener()}
+     *
+     * @param gearCursorController the cursor controller that controls this scene object
+     */
+    public void setCursorController(GVRCursorController gearCursorController){
+        if(gearCursorController != null && gearCursorController.getControllerType() == GVRControllerType.CONTROLLER) {
+            gearCursorController.setSceneObject(this);
+            this.gearCursorController = gearCursorController;
         }
+    }
 
-        @Override
-        public void onExit(GVRPicker gvrPicker, GVRSceneObject sceneObj){
-            if(gvrPicker != picker) return;
-            ray.getTransform().setScaleZ(cursorDepth);
-            if(cursor != null) {
-                sceneObj.removeChildObject(cursor);
-                cursor.getTransform().reset();
-                cursor.getTransform().setPosition(0, 0, -cursorDepth);
+    /**
+     * Returns an {@link ISensorEvents} instance that can be added to a
+     * {@link GVRSceneObject}'s set of {@link SensorEvent} listeners to enable automatic
+     * adjustment of ray depth when the GearController's ray intersects the object
+     * to create the appearance of the cursor/ray projecting on the object.
+     *
+     * Note: A {@link GVRBaseSensor} must be set with {@link GVRSceneObject#setSensor(GVRBaseSensor)}
+     * and enabled in order for an object to receive SensorEvents.
+     *
+     * @return a custom {@link ISensorEvents} instance
+     */
+    public ISensorEvents getProjectionListener(){
+        if(gearCursorController != null)
+            return sensorListener;
+        else
+            return null;
+    }
+
+    /**
+     * Enables surface projection, which will cause the cursor to be projected
+     * on the surface of a {@link GVRSceneObject} according to the surface normal at the
+     * intersection point of the controller's ray (the object must have attached the
+     * {@link ISensorEvents} instance given by {@link this#getProjectionListener()}).
+     * Note this requires additional calculations for every {@link SensorEvent} received.
+     *
+     * When this is disabled, the ray/cursor depth will still be adjusted by the
+     * ProjectionListener, but the cursor will not be transformed according to
+     * surface normals. Also note that a {@link org.gearvrf.GVRMeshCollider}
+     * must be attached to a {@link GVRSceneObject} in order for surface normals
+     * to be calculated.
+     */
+    public void enableSurfaceProjection(){
+        projectToSurface = true;
+    }
+
+    /**
+     * Disables surface projection.
+     */
+    public void disableSurfaceProjection(){
+        projectToSurface = false;
+        if(cursor != null){
+            GVRSceneObject parent = cursor.getParent();
+            if (parent != this) {
+                parent.removeChildObject(cursor);
                 addChildObject(cursor);
             }
         }
+    }
 
+    private class SensorListener implements ISensorEvents {
+        private final float[] nullCoords = {-1f, -1f, -1f};
         @Override
-        public void onInside(GVRPicker gvrPicker, GVRSceneObject sceneObj, GVRPicker.GVRPickedObject collision){
-            if(gvrPicker != picker) return;
+        public void onSensorEvent(SensorEvent event){
+            if(event.getCursorController() != gearCursorController) { return; }
+
+            GVRPicker.GVRPickedObject collision = event.getPickedObject();
+            boolean cursorNull = cursor==null;
+            boolean coordinatesCalculated = !Arrays.equals(collision.getBarycentricCoords(), nullCoords);
+            GVRSceneObject parent = null;
+
+            if(!cursorNull)
+                parent = cursor.getParent();
+
             ray.getTransform().setScaleZ(collision.hitDistance);
-            if(cursor != null && !Arrays.equals(collision.getBarycentricCoords(), nullCoords)) {
-                Vector3f lookat = new Vector3f(0, 0, 0);
-                Vector3f up = new Vector3f(0, 1, 0);
-                Vector3f Xaxis = new Vector3f(0, 0, 0);
-                Vector3f Yaxis = new Vector3f(0, 0, 0);
 
-                lookat.set(collision.getNormalX(), collision.getNormalY(), collision.getNormalZ());
-                lookat = lookat.normalize();
+            if(event.isOver()){
+                if(!cursorNull){
+                    if(projectToSurface && coordinatesCalculated) {
+                        if (parent != collision.hitObject) {
+                            parent.removeChildObject(cursor);
+                            collision.hitObject.addChildObject(cursor);
+                        }
+                        Vector3f lookat = new Vector3f(0, 0, 0);
+                        Vector3f up = new Vector3f(0, 1, 0);
+                        Vector3f Xaxis = new Vector3f(0, 0, 0);
+                        Vector3f Yaxis = new Vector3f(0, 0, 0);
 
-                up.cross(lookat.x, lookat.y, lookat.z, Xaxis);
-                Xaxis = Xaxis.normalize();
+                        lookat.set(collision.getNormalX(), collision.getNormalY(), collision.getNormalZ());
+                        lookat = lookat.normalize();
 
-                lookat.cross(Xaxis.x, Xaxis.y, Xaxis.z, Yaxis);
-                Yaxis = Yaxis.normalize();
+                        up.cross(lookat.x, lookat.y, lookat.z, Xaxis);
+                        Xaxis = Xaxis.normalize();
 
-                cursor.getTransform().setModelMatrix(new float[]{Xaxis.x, Xaxis.y, Xaxis.z, 0.0f,
-                        Yaxis.x, Yaxis.y, Yaxis.z, 0.0f,
-                        lookat.x, lookat.y, lookat.z, 0.0f,
-                        collision.getHitX(), +collision.getHitY(), collision.getHitZ(), 1.0f});
+                        lookat.cross(Xaxis.x, Xaxis.y, Xaxis.z, Yaxis);
+                        Yaxis = Yaxis.normalize();
+
+                        cursor.getTransform().setModelMatrix(new float[]{Xaxis.x, Xaxis.y, Xaxis.z, 0.0f,
+                                Yaxis.x, Yaxis.y, Yaxis.z, 0.0f,
+                                lookat.x, lookat.y, lookat.z, 0.0f,
+                                collision.getHitX(), +collision.getHitY(), collision.getHitZ(), 1.0f});
+                    }
+                    else {
+                        cursor.getTransform().setPosition(0,0,-collision.hitDistance);
+                    }
+                }
+            }
+            else {
+                ray.getTransform().setScaleZ(rayDepth);
+                if(!cursorNull) {
+                    if (parent != GVRGearControllerSceneObject.this) {
+                        parent.removeChildObject(cursor);
+                        addChildObject(cursor);
+                    }
+                    cursor.getTransform().reset();
+                    cursor.getTransform().setPosition(0, 0, -rayDepth);
+                }
             }
         }
-    };
+    }
 
 }
