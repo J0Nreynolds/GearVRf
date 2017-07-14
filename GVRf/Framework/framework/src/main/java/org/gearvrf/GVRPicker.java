@@ -644,11 +644,24 @@ public class GVRPicker extends GVRBehavior {
         return Arrays.asList(pickObjects(scene, ox, oy, oz, dx, dy, dz));
     }
 
-
     /**
      * Internal utility to help JNI add hit objects to the pick list.
      */
-    static GVRPickedObject makeHit(long colliderPointer, float distance, float hitx, float hity, float hitz,
+    static GVRPickedObject makeHit(long colliderPointer, float distance, float hitx, float hity, float hitz)
+    {
+        GVRCollider collider = GVRCollider.lookup(colliderPointer);
+        if (collider == null)
+        {
+            Log.d(TAG, "makeHit: cannot find collider for %x", colliderPointer);
+            return null;
+        }
+        return new GVRPicker.GVRPickedObject(collider, new float[] { hitx, hity, hitz }, distance);
+    }
+    /**
+     * Internal utility to help JNI add hit objects to the pick list. Specifically for MeshColliders with picking
+     * for UV, Barycentric, and normal coordinates enabled
+     */
+    static GVRPickedObject makeHitMesh(long colliderPointer, float distance, float hitx, float hity, float hitz,
                                    int faceIndex, float barycentricx, float barycentricy, float barycentricz,
                                    float texu, float texv, float normalx, float normaly, float normalz)
     {
@@ -662,6 +675,8 @@ public class GVRPicker extends GVRBehavior {
                 new float[] {barycentricx, barycentricy, barycentricz},
                 new float[]{ texu, texv }, new float[]{normalx, normaly, normalz});
     }
+
+
 
     /**
      * Tests the {@link GVRSceneObject}s contained within scene against the
@@ -740,6 +755,17 @@ public class GVRPicker extends GVRBehavior {
             this.barycentricCoords = barycentricCoords;
             this.textureCoords = textureCoords;
             this.normalCoords = normalCoords;
+        }
+
+        public GVRPickedObject(GVRCollider hitCollider, float[] hitLocation, float hitDistance) {
+            hitObject = hitCollider.getOwnerObject();
+            this.hitDistance = hitDistance;
+            this.hitCollider = hitCollider;
+            this.hitLocation = hitLocation;
+            this.faceIndex = -1;
+            this.barycentricCoords = new float[]{-1.0f, -1.0f, -1.0f};
+            this.textureCoords = new float[]{-1.0f, -1.0f};
+            this.normalCoords = new float[]{0.0f, 0.0f, 0.0f};
         }
 
         public GVRPickedObject(GVRSceneObject hitObject, float[] hitLocation) {
