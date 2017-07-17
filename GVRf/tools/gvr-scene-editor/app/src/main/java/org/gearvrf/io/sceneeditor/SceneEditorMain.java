@@ -102,7 +102,7 @@ public class SceneEditorMain extends GVRMain {
         //TODO fix cursor manager to not require this at start
         float[] position = new float[]{0.0f, -10.0f, 0f};
         GVRMaterial material = new GVRMaterial(gvrContext);
-        material.setMainTexture(gvrContext.loadTexture(new GVRAndroidResource(gvrContext, R.mipmap
+        material.setMainTexture(gvrContext.getAssetLoader().loadTexture(new GVRAndroidResource(gvrContext, R.mipmap
                 .ic_launcher)));
         final GVRCubeSceneObject cubeSceneObject = new GVRCubeSceneObject(gvrContext, true,
                 material);
@@ -175,7 +175,7 @@ public class SceneEditorMain extends GVRMain {
         Log.d(TAG, "Loading the model to scene:%s", modelFileName);
         try {
             currentModel = modelFileName;
-            gvrContext.loadModelFromSD(modelFileName);
+            gvrContext.getAssetLoader().loadModel(modelFileName);
         } catch (IOException e) {
             Log.e(TAG, "Could not load model:" + modelFileName + e.getMessage());
         }
@@ -281,7 +281,7 @@ public class SceneEditorMain extends GVRMain {
     private void addIcon(int iconResource, int titleResource, float xPos, float titleHeight, float
             titleWidth, StateChangedListener listener) {
         GVRMaterial material = new GVRMaterial(gvrContext);
-        material.setMainTexture(gvrContext.loadTexture(new GVRAndroidResource(gvrContext,
+        material.setMainTexture(gvrContext.getAssetLoader().loadTexture(new GVRAndroidResource(gvrContext,
                 iconResource)));
         GVRSceneObject iconQuad = new GVRSceneObject(gvrContext, ICON_QUAD_WIDTH,
                 ICON_QUAD_HEIGHT);
@@ -420,7 +420,7 @@ public class SceneEditorMain extends GVRMain {
 
         if (fileName.endsWith(CUBEMAP_EXTENSION)) {
             initializeSurroundingCube();
-            Future<GVRTexture> futureCubeTexture = gvrContext.loadFutureCubemapTexture
+            Future<GVRTexture> futureCubeTexture = gvrContext.getAssetLoader().loadFutureCubemapTexture
                     (resource);
             environmentCube.getRenderData().getMaterial().setMainTexture(futureCubeTexture);
             if (environmentSceneObject != environmentCube) {
@@ -431,7 +431,7 @@ public class SceneEditorMain extends GVRMain {
         } else {
             initializeSurroundingSphere();
             final GVRAndroidResource finalResource = resource;
-            GVRTexture futureSphereTexture = gvrContext.loadTexture(finalResource);
+            GVRTexture futureSphereTexture = gvrContext.getAssetLoader().loadTexture(finalResource);
             environmentSphere.getRenderData().getMaterial().setMainTexture(futureSphereTexture);
             if (environmentSceneObject != environmentSphere) {
                 mainScene.removeSceneObject(environmentSceneObject);
@@ -456,7 +456,7 @@ public class SceneEditorMain extends GVRMain {
     }
 
     private void addDefaultSurroundings(GVRContext gvrContext) {
-        Future<GVRTexture> futureTexture = gvrContext.loadFutureTexture(new
+        Future<GVRTexture> futureTexture = gvrContext.getAssetLoader().loadFutureTexture(new
                 GVRAndroidResource(gvrContext, R.drawable.skybox_gridroom));
         initializeSurroundingSphere();
         environmentSphere.getRenderData().getMaterial().setMainTexture(futureTexture);

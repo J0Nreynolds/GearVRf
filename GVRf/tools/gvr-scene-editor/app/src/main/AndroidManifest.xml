@@ -22,8 +22,9 @@
     android:versionName="1.0">
 
     <uses-sdk
-        android:minSdkVersion="19"
-        android:targetSdkVersion="19"/>
+        android:minSdkVersion="21"
+        android:targetSdkVersion="21"
+        tools:overrideLibrary="org.gearvrf.io.cursor3d,org.gearvrf.oculus,org.gearvrf,org.gearvrf.daydream,smcl.samsung.com.sceneserializer" />
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
