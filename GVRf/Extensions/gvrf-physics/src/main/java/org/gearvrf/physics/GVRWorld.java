@@ -292,7 +292,7 @@ public class GVRWorld extends GVRBehavior implements ISceneObjectEvents, Compone
 
         @Override
         public void run(){
-            if(running){
+            if(running && isEnabled()){
                 mFrameTime += interval;
                 if (mIsProcessing) {
                     return;
