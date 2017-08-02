@@ -2,6 +2,7 @@ package org.gearvrf.scene_objects;
 
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -27,12 +28,10 @@ public class GVRGUISceneObject extends GVRViewSceneObject {
     private static final String TAG = GVRGUISceneObject.class.getSimpleName();;
 
     private static final int MOTION_EVENT = 1;
+    private static final int KEY_EVENT = 2;
 
-    private static final int SUBDIVISION_MUTLIPLIER = 6;
-    private static final int DEGREES_PER_SUBDIVISION = 8;
-
-    private int frameWidth;
-    private int frameHeight;
+    private float frameWidth;
+    private float frameHeight;
 
     private final static MotionEvent.PointerProperties[] pointerProperties;
     private final static MotionEvent.PointerCoords[] pointerCoordsArray;
@@ -42,7 +41,7 @@ public class GVRGUISceneObject extends GVRViewSceneObject {
     static {
         MotionEvent.PointerProperties properties = new MotionEvent.PointerProperties();
         properties.id = 0;
-        properties.toolType = MotionEvent.TOOL_TYPE_MOUSE;
+        properties.toolType = MotionEvent.TOOL_TYPE_FINGER;
         pointerProperties = new MotionEvent.PointerProperties[]{properties};
         pointerCoords = new MotionEvent.PointerCoords();
         pointerCoordsArray = new MotionEvent.PointerCoords[]{pointerCoords};
@@ -88,8 +87,6 @@ public class GVRGUISceneObject extends GVRViewSceneObject {
     public <T extends View & GVRView> GVRGUISceneObject(GVRContext gvrContext, T gvrView, float radius) {
         this(gvrContext, gvrView, curvedMesh(gvrContext, gvrView, radius, 45f));
     }
-
-
 
     /**
      * Constructor for GVRGUISceneObject
@@ -173,6 +170,7 @@ public class GVRGUISceneObject extends GVRViewSceneObject {
 
                 Message message = Message.obtain(mainThreadHandler, MOTION_EVENT, 0, 0,
                         clone);
+                Log.d(TAG, "onSensorEvent: " + clone);
                 mainThreadHandler.sendMessage(message);
             }
         }
