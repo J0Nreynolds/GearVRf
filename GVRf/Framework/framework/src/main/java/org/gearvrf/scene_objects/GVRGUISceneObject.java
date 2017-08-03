@@ -20,7 +20,23 @@ import java.util.List;
 
 
 /**
- * Created by j.reynolds on 6/12/2017.
+ * This class extends the {@link GVRViewSceneObject} to make interaction with Android
+ * Views simple. This class achieves the following:
+ *
+ * 1.  Allows any {@link org.gearvrf.GVRCursorController} to be used for interactions
+ * with the {@link GVRView} displayed. This is achieved with an {@link ISensorEvents} listener
+ * that uses the motion events set in {@link org.gearvrf.GVRCursorController}s to dispatch
+ * appropriate touch events to the Android View contained in the {@link GVRView}.
+ *
+ * 2. Generates an appropriate mesh for displaying the {@link GVRView} passed to the
+ * constructor. The mesh will always have the correct aspect ratio, and the user can
+ * specify the curvature of the mesh if desired.
+ *
+ * To use this class, simply instantiate a new {@link GVRGUISceneObject} with the appropriate
+ * arguments, and add the instance to the current {@link org.gearvrf.GVRScene} using
+ * {@link org.gearvrf.GVRScene#addSceneObject}. Then use the application's
+ * {@link org.gearvrf.GVRCursorController}(s) to interact with the {@link GVRGUISceneObject}
+ * instance.
  */
 
 public class GVRGUISceneObject extends GVRViewSceneObject {
