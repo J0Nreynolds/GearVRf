@@ -225,7 +225,7 @@ ColliderData MeshCollider::isHit(const Mesh& mesh, const glm::vec3& rayStart, co
                 data.FaceIndex = i/3;
             }
         }
-        if(pickCoordinates){
+        if(pickCoordinates && data.IsHit){
             populateSurfaceCoords(mesh, data);
         }
 
